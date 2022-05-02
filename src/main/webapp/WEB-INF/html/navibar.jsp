@@ -44,6 +44,14 @@
                      <li><a href="/delete-skill-form">Delete</a></li>
                    </ul>
                   </li>
+                  <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="/relations">Relations <span class="caret"></span></a>
+                   <ul class="dropdown-menu">
+                     <li><a href="/companies-projects-form">Companies-Projects</a></li>
+                     <li><a href="/customers-projects-form">Customers-Projects</a></li>
+                     <li><a href="/developers-projects-form">Developers-Projects</a></li>
+                     <li><a href="/developers-skills-form">Developers-Skills</a></li>
+                   </ul>
+                  </li>
                 </ul>
               </div>
             </nav>

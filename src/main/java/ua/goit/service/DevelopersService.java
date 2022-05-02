@@ -5,6 +5,9 @@ import ua.goit.model.dao.DevelopersDao;
 import ua.goit.model.dto.DevelopersDto;
 import ua.goit.repository.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class DevelopersService {
     private final DevelopersConverter converter;
     private final Repository<DevelopersDao> repository;
@@ -21,6 +24,12 @@ public class DevelopersService {
     public DevelopersDto findById(int id) {
         return converter.convert(repository.findById(id).orElseThrow(() -> new IllegalArgumentException
                 (String.format("Developer with id %d not found", id))));
+    }
+
+    public List<DevelopersDto> findAll() {
+        return repository.findAll().stream()
+                .map(converter::convert)
+                .collect(Collectors.toList());
     }
 
     public int update(DevelopersDto dto) {

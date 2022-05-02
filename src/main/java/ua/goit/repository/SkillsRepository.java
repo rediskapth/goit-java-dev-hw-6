@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class SkillsRepository implements Repository<SkillsDao> {
@@ -14,8 +16,10 @@ public class SkillsRepository implements Repository<SkillsDao> {
     private final DatabaseManager manager;
     private static final String INSERT = "INSERT INTO skills (language, skill) VALUES (?, ?);";
     private static final String FIND_BY_ID = "SELECT * FROM skills s WHERE s.skill_id = ?;";
+    private static final String FIND_ALL = "SELECT * FROM skills;";
     private static final String UPDATE = "UPDATE skills SET language = ?, skill = ? WHERE skill_id = ?;";
-    private static final String REMOVE_BY_ID = "DELETE FROM skills s WHERE s.skill_id = ?;";
+    private static final String REMOVE_BY_ID = "DELETE FROM developers_skills WHERE skill_id = ?;\n" +
+            "DELETE FROM skills s WHERE s.skill_id = ?;";
 
     public SkillsRepository(DatabaseManager manager) {
         this.manager = manager;
@@ -47,6 +51,18 @@ public class SkillsRepository implements Repository<SkillsDao> {
     }
 
     @Override
+    public List<SkillsDao> findAll() {
+        try (Connection connection = manager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return mapToSkillsDaos(resultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return List.of();
+    }
+
+    @Override
     public int update(SkillsDao skillsDao) {
         int columnsUpdated = 0;
         try (Connection connection = manager.getConnection();
@@ -66,6 +82,7 @@ public class SkillsRepository implements Repository<SkillsDao> {
         try (Connection connection = manager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_BY_ID)) {
             preparedStatement.setInt(1, skillsDao.getSkillId());
+            preparedStatement.setInt(2, skillsDao.getSkillId());
             preparedStatement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -81,5 +98,17 @@ public class SkillsRepository implements Repository<SkillsDao> {
             skillsDao.setSkill(resultSet.getString("skill"));
         }
         return Optional.ofNullable(skillsDao);
+    }
+
+    private List<SkillsDao> mapToSkillsDaos(ResultSet resultSet) throws SQLException{
+        List<SkillsDao> skills = new ArrayList<>();
+        while (resultSet.next()) {
+            SkillsDao skillsDao = new SkillsDao();
+            skillsDao.setSkillId(resultSet.getInt("skill_id"));
+            skillsDao.setLanguage(resultSet.getString("language"));
+            skillsDao.setSkill(resultSet.getString("skill"));
+            skills.add(skillsDao);
+        }
+        return skills;
     }
 }

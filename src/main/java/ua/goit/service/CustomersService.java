@@ -5,6 +5,9 @@ import ua.goit.model.dao.CustomersDao;
 import ua.goit.model.dto.CustomersDto;
 import ua.goit.repository.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class CustomersService {
     private final CustomersConverter converter;
     private final Repository<CustomersDao> repository;
@@ -21,6 +24,12 @@ public class CustomersService {
     public CustomersDto findById(int id) {
         return converter.convert(repository.findById(id).orElseThrow(() -> new IllegalArgumentException
                 (String.format("Customer with id %d not found", id))));
+    }
+
+    public List<CustomersDto> findAll() {
+        return repository.findAll().stream()
+                .map(converter::convert)
+                .collect(Collectors.toList());
     }
 
     public int update(CustomersDto dto) {

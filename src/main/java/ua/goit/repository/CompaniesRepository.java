@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class CompaniesRepository implements Repository<CompaniesDao> {
@@ -14,8 +16,10 @@ public class CompaniesRepository implements Repository<CompaniesDao> {
     private final DatabaseManager manager;
     private static final String INSERT = "INSERT INTO companies (name, location) VALUES (?, ?);";
     private static final String FIND_BY_ID = "SELECT * FROM companies c WHERE c.company_id = ?;";
+    private static final String FIND_ALL = "SELECT * FROM companies";
     private static final String UPDATE = "UPDATE companies SET name = ?, location = ? WHERE company_id = ?;";
-    private static final String REMOVE_BY_ID = "DELETE FROM companies c WHERE c.company_id = ?;";
+    private static final String REMOVE_BY_ID = "DELETE FROM companies_projects WHERE company_id = ?;\n" +
+            "DELETE FROM companies c WHERE c.company_id = ?;";
 
     public CompaniesRepository(DatabaseManager manager) {
         this.manager = manager;
@@ -47,6 +51,17 @@ public class CompaniesRepository implements Repository<CompaniesDao> {
     }
 
     @Override
+    public List<CompaniesDao> findAll() {
+        try (Connection connection = manager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return mapToCompaniesDaos(resultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return List.of();    }
+
+    @Override
     public int update(CompaniesDao companiesDao) {
         int columnsUpdated = 0;
         try (Connection connection = manager.getConnection();
@@ -66,6 +81,7 @@ public class CompaniesRepository implements Repository<CompaniesDao> {
         try (Connection connection = manager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_BY_ID)) {
             preparedStatement.setInt(1, companiesDao.getCompanyId());
+            preparedStatement.setInt(2, companiesDao.getCompanyId());
             preparedStatement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -81,5 +97,17 @@ public class CompaniesRepository implements Repository<CompaniesDao> {
             companiesDao.setLocation(resultSet.getString("location"));
         }
         return Optional.ofNullable(companiesDao);
+    }
+
+    private List<CompaniesDao> mapToCompaniesDaos(ResultSet resultSet) throws SQLException {
+        List<CompaniesDao> companies = new ArrayList<>();
+        while (resultSet.next()) {
+            CompaniesDao companiesDao = new CompaniesDao();
+            companiesDao.setCompanyId(resultSet.getInt("company_id"));
+            companiesDao.setName(resultSet.getString("name"));
+            companiesDao.setLocation(resultSet.getString("location"));
+            companies.add(companiesDao);
+        }
+        return companies;
     }
 }

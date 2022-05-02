@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class DevelopersRepository implements Repository<DevelopersDao> {
@@ -14,8 +16,11 @@ public class DevelopersRepository implements Repository<DevelopersDao> {
     private final DatabaseManager manager;
     private static final String INSERT = "INSERT INTO developers (name, age, salary) VALUES (?, ?, ?);";
     private static final String FIND_BY_ID = "SELECT * FROM developers d WHERE d.developer_id = ?;";
+    private static final String FIND_ALL = "SELECT * FROM developers";
     private static final String UPDATE = "UPDATE developers SET name = ?, age = ?, salary = ? WHERE developer_id = ?;";
-    private static final String REMOVE_BY_ID = "DELETE FROM developers d WHERE d.developer_id = ?;";
+    private static final String REMOVE_BY_ID = "DELETE FROM developers_skills WHERE developer_id = ?;\n" +
+            "DELETE FROM developers_projects WHERE developer_id = ?;\n" +
+            "DELETE FROM developers d WHERE d.developer_id = ?;";
 
     public DevelopersRepository(DatabaseManager manager) {
         this.manager = manager;
@@ -48,6 +53,18 @@ public class DevelopersRepository implements Repository<DevelopersDao> {
     }
 
     @Override
+    public List<DevelopersDao> findAll() {
+        try (Connection connection = manager.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return mapToDevelopersDaos(resultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return List.of();
+    }
+
+    @Override
     public int update(DevelopersDao developersDao) {
         int columnsUpdated = 0;
         try (Connection connection = manager.getConnection();
@@ -68,6 +85,8 @@ public class DevelopersRepository implements Repository<DevelopersDao> {
         try (Connection connection = manager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_BY_ID)) {
             preparedStatement.setInt(1, developersDao.getDeveloperId());
+            preparedStatement.setInt(2, developersDao.getDeveloperId());
+            preparedStatement.setInt(3, developersDao.getDeveloperId());
             preparedStatement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -85,5 +104,18 @@ public class DevelopersRepository implements Repository<DevelopersDao> {
 
         }
         return Optional.ofNullable(developersDao);
+    }
+
+    private List<DevelopersDao> mapToDevelopersDaos(ResultSet resultSet) throws SQLException {
+        List<DevelopersDao> developers = new ArrayList<>();
+        while (resultSet.next()) {
+            DevelopersDao developersDao = new DevelopersDao();
+            developersDao.setDeveloperId(resultSet.getInt("developer_id"));
+            developersDao.setName(resultSet.getString("name"));
+            developersDao.setAge(resultSet.getInt("age"));
+            developersDao.setSalary(resultSet.getInt("salary"));
+            developers.add(developersDao);
+        }
+        return developers;
     }
 }

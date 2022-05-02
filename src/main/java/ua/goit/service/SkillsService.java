@@ -5,6 +5,9 @@ import ua.goit.model.dao.SkillsDao;
 import ua.goit.model.dto.SkillsDto;
 import ua.goit.repository.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class SkillsService {
     private final SkillsConverter converter;
     private final Repository<SkillsDao> repository;
@@ -21,6 +24,12 @@ public class SkillsService {
     public SkillsDto findById(int id) {
         return converter.convert(repository.findById(id).orElseThrow(() -> new IllegalArgumentException
                 (String.format("Skill with id %d not found", id))));
+    }
+
+    public List<SkillsDto> findAll() {
+        return repository.findAll().stream()
+                .map(converter::convert)
+                .collect(Collectors.toList());
     }
 
     public int update(SkillsDto dto) {
